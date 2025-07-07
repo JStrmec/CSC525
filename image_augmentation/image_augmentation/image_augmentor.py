@@ -96,7 +96,6 @@ def augment_images_in_directory(
 
 
 if __name__ == "__main__":
-
     resources_dir = os.getenv("RESOURCES_DIR", "image_augmentation/resources")
     input_directory = os.path.join(resources_dir, "images")
     output_directory = os.path.join(resources_dir, "augmented_images")

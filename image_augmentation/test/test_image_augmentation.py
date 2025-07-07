@@ -1,5 +1,4 @@
 import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
 import os
 import unittest
 import urllib.request
@@ -9,6 +8,10 @@ from image_augmentation.image_augmentor import (
     ImageAugmentor,
     augment_images_in_directory,
 )
+
+
+ssl._create_default_https_context = ssl._create_unverified_context
+
 
 class TestImageAugmentation(unittest.TestCase):
     def setUp(self):
@@ -98,6 +101,6 @@ class TestImageAugmentation(unittest.TestCase):
         )
 
     def tearDown(self):
-        #shutil.rmtree(self.input_dir, ignore_errors=True)
-        #shutil.rmtree(self.output_dir, ignore_errors=True)
+        # shutil.rmtree(self.input_dir, ignore_errors=True)
+        # shutil.rmtree(self.output_dir, ignore_errors=True)
         pass
