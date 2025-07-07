@@ -24,3 +24,4 @@ build/
 *.ipynb_checkpoints/
 *.env
 .ruff_cache/
+*.coverage.xml
