@@ -15,7 +15,7 @@ MODEL_NAME = "microsoft/DialoGPT-small"  # or "distilgpt2"
 FINE_TUNED_MODEL_PATH = "./chatbot-finetuned"
 
 RESOURCES_DIR = os.getenv("RESOURCES_DIR", "mental_health_retrieval_chatbot/resources")
-EMPATHETIC_DIALOGUES_PATH = os.path.join(RESOURCES_DIR, "EmpatheticDialogues/train.csv")
+EMPATHETIC_DIALOGUES_PATH = os.path.join(RESOURCES_DIR, "empatheticdialogues/train.csv")
 DAILY_DIALOG_PATH = os.path.join(RESOURCES_DIR, "dailydialog/dialogues_text.txt")
 
 # Load the tokenizer and model

@@ -33,8 +33,8 @@ format: setup-quality-env
 
 .PHONY: run
 
-run:
+run: setup-dev-env
 	PYTHONPATH=$(SRC) $(PYTHON) mental_health_retrieval_chatbot/chat_room.py
 	
-run-tuning:
+run-tuning: setup-dev-env
 	PYTHONPATH=$(SRC) $(PYTHON) mental_health_retrieval_chatbot/model_tuning.py
