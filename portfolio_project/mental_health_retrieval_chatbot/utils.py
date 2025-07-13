@@ -4,7 +4,8 @@ import tarfile
 import requests
 import pandas as pd
 
-def download_and_load_empathetic_dialogues(data_dir='resources'):
+
+def download_and_load_empathetic_dialogues(data_dir="resources"):
     url = "https://dl.fbaipublicfiles.com/parlai/empatheticdialogues/empatheticdialogues.tar.gz"
     tar_path = os.path.join(data_dir, "empatheticdialogues.tar.gz")
 
@@ -38,14 +39,15 @@ def download_and_load_empathetic_dialogues(data_dir='resources'):
 
     return df
 
+
 def download_and_load_counsel_chat():
     # Load the Counsel Chat dataset from Hugging Face
     print("Loading Counsel Chat dataset...")
     dataset = load_dataset("nbertagnolli/counsel-chat")
     print("Dataset loaded successfully.")
-    
+
     # Convert to pandas DataFrame
-    df = dataset['train'].to_pandas()
+    df = dataset["train"].to_pandas()
     print("Converted to DataFrame. Rows:", len(df))
-    
+
     return df
