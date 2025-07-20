@@ -1,7 +1,7 @@
-
 torch
 pandas
 datasets
+kagglehub
 numpy==1.26.4
-transformers==4.40.1 
 accelerate==0.27.2
+transformers==4.40.1 

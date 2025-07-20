@@ -1,6 +1,6 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
 from constants import DEFAULT_CHAT_MODEL
+
 tokenizer = AutoTokenizer.from_pretrained(DEFAULT_CHAT_MODEL)
 model = AutoModelForCausalLM.from_pretrained(DEFAULT_CHAT_MODEL)
 
