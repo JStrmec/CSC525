@@ -10,30 +10,30 @@ from transformers import (
 )
 import torch
 
-# Choose a small model
-MODEL_NAME = "microsoft/DialoGPT-small"  # or "distilgpt2"
-FINE_TUNED_MODEL_PATH = "./chatbot-finetuned"
-
-RESOURCES_DIR = os.getenv("RESOURCES_DIR", "mental_health_retrieval_chatbot/resources")
-EMPATHETIC_DIALOGUES_PATH = os.path.join(RESOURCES_DIR, "empatheticdialogues/train.csv")
-DAILY_DIALOG_PATH = os.path.join(RESOURCES_DIR, "dailydialog/dialogues_text.txt")
+from .constants import (
+    DEFAULT_BASE_CHAT_MODEL,
+    DEFAULT_CHAT_MODEL,
+    EMPATHETIC_DIALOGUES_PATH,
+    DAILY_DIALOG_PATH,
+    Names,
+)
 
 # Load the tokenizer and model
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+tokenizer = AutoTokenizer.from_pretrained(DEFAULT_BASE_CHAT_MODEL)
 
 # Set pad_token if missing
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
-model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
+model = AutoModelForCausalLM.from_pretrained(DEFAULT_BASE_CHAT_MODEL)
 model.resize_token_embeddings(len(tokenizer))  # Important if you add special tokens
 
 
 # 1. Load EmpatheticDialogues
 def load_empathetic(path: str = EMPATHETIC_DIALOGUES_PATH):
     df = pd.read_csv(path, quoting=1, on_bad_lines="skip")
-    df["text"] = df["prompt"] + " " + df["utterance"]
-    return Dataset.from_pandas(df[["text"]])
+    df[Names.TEXT] = df["prompt"] + " " + df["utterance"]
+    return Dataset.from_pandas(df[[Names.TEXT]])
 
 
 # 2. Load DailyDialog
@@ -41,13 +41,13 @@ def load_dailydialog(path: str = DAILY_DIALOG_PATH):
     with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
     conversations = [line.strip().replace("__eou__", "") for line in lines]
-    df = pd.DataFrame(conversations, columns=["text"])
+    df = pd.DataFrame(conversations, columns=[Names.TEXT])
     return Dataset.from_pandas(df)
 
 
 # 3. Preprocessing
 def tokenize_function(example: pd.DataFrame) -> AutoTokenizer:
-    return tokenizer(example["text"], truncation=True, max_length=512)
+    return tokenizer(example[Names.TEXT], truncation=True, max_length=512)
 
 
 def main():
@@ -60,12 +60,12 @@ def main():
 
     # Tokenize
     tokenized = combined_ds.map(
-        tokenize_function, batched=True, remove_columns=["text"]
+        tokenize_function, batched=True, remove_columns=[Names.TEXT]
     )
 
     # Define training args
     training_args = TrainingArguments(
-        output_dir=FINE_TUNED_MODEL_PATH,
+        output_dir=DEFAULT_CHAT_MODEL,
         overwrite_output_dir=True,
         per_device_train_batch_size=4,
         num_train_epochs=3,
@@ -97,8 +97,8 @@ def main():
     trainer.train()
 
     # Save model
-    model.save_pretrained(FINE_TUNED_MODEL_PATH)
-    tokenizer.save_pretrained(FINE_TUNED_MODEL_PATH)
+    model.save_pretrained(DEFAULT_CHAT_MODEL)
+    tokenizer.save_pretrained(DEFAULT_CHAT_MODEL)
 
 
 if __name__ == "__main__":

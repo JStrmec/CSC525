@@ -1,8 +1,8 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
-
-tokenizer = AutoTokenizer.from_pretrained("./chatbot-finetuned")
-model = AutoModelForCausalLM.from_pretrained("./chatbot-finetuned")
+from constants import DEFAULT_CHAT_MODEL
+tokenizer = AutoTokenizer.from_pretrained(DEFAULT_CHAT_MODEL)
+model = AutoModelForCausalLM.from_pretrained(DEFAULT_CHAT_MODEL)
 
 input_text = "I'm feeling really stressed out about everything lately."
 input_ids = tokenizer.encode(input_text + tokenizer.eos_token, return_tensors="pt")
