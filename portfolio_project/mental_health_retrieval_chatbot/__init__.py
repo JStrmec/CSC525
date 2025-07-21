@@ -1,9 +1,10 @@
-from . import chatbot_model_tuning, configs, constants, utils, semantic_encoder
+from . import chatbot_model_tuning, configs, constants, semantic_encoder
+from .retrieval import MentalHealthVectorStore
 
 __all__ = [
-    "utils",
     "configs",
     "constants",
     "chatbot_model_tuning",
     "semantic_encoder",
+    "MentalHealthVectorStore",
 ]
