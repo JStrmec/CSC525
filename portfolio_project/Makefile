@@ -22,7 +22,7 @@ run-test: setup-dev-env
 	PYTHONPATH=$(SRC):$(SRC)/test:$$PYTHONPATH RESOURCES_DIR=$(RESOURCES_DIR) coverage run -m unittest discover -s test -p 'test_*.py' -v
 	coverage xml
 
-check_dirs := . mental_health_retrieval_chatbot/test
+check_dirs := . test
 
 quality-check: setup-quality-env
 	ruff check $(check_dirs)

@@ -1,7 +1,7 @@
 import gradio as gr
-from chatbot_responder import ChatbotResponder
-from semantic_encoder import SemanticEncoder
-from .retrieval import MentalHealthVectorStore
+from mental_health_retrieval_chatbot.chatbot_responder import ChatbotResponder
+from mental_health_retrieval_chatbot.semantic_encoder import SemanticEncoder
+from mental_health_retrieval_chatbot.retrieval import MentalHealthVectorStore
 
 # Initialize once
 encoder = SemanticEncoder()

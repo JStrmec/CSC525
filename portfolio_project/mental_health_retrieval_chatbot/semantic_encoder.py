@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 import torch
 import torch.nn.functional as F
 from transformers import AutoModel, AutoTokenizer
-from constants import DEFAULT_SVS_MODEL, CHAR_TRUNCATION
+from .constants import DEFAULT_SVS_MODEL, CHAR_TRUNCATION
 
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
@@ -20,12 +20,6 @@ class SemanticEncoder:
         print("Model initialization finished!")
         self.query_prefix = "query:"
         self.passage_prefix = ""
-
-    @staticmethod
-    def max_scale_quantize_embeddings(embeddings: torch.Tensor) -> torch.Tensor:
-        max_val = torch.max(torch.abs(embeddings), dim=-1, keepdim=True).values
-        quantized_embeddings = 127 * embeddings / max_val
-        return quantized_embeddings.to(torch.int8)
 
     def encode(self, input_dict: Dict[str, Any]) -> Dict[str, Any]:
         try:
@@ -46,8 +40,6 @@ class SemanticEncoder:
                 text = f"{self.passage_prefix} {text}".strip()
             elif dataType == "query":
                 text = f"{self.query_prefix} {text}".strip()
-            # Check if quantization is set
-            quantize_bool = self.obj_to_bool(input_dict.get("quantize", True))
 
             # Tokenization
             tokenized_texts = self.tokenizer(
@@ -70,12 +62,6 @@ class SemanticEncoder:
                 embeddings = F.normalize(embeddings, p=2, dim=1)
                 timings_dict["normalizing_time"] = time()
 
-                # Check if quantization is set
-                if quantize_bool:
-                    # Quantize the embeddings
-                    embeddings = self.quantize_vectors(embeddings)
-                    timings_dict["quantizing_time"] = time()
-
                 # Converting into output format
                 output_dict = {"vector": embeddings.squeeze().tolist()}
 
@@ -97,10 +83,7 @@ class SemanticEncoder:
             print("Empty text provided. Returning empty output.")
             return {"error": "No text provided"}
         elif len(text) > CHAR_TRUNCATION:
-            print(
-                f"Input text truncated to {CHAR_TRUNCATION} characters "
-                f"to avoid Fusion stage timeout errors."
-            )
+            print(f"Input text truncated to {CHAR_TRUNCATION} characters.")
             return text[:CHAR_TRUNCATION]
         return text
 

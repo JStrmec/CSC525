@@ -29,11 +29,16 @@ DEFAULT_SVS_MODEL = "Snowflake/snowflake-arctic-embed-l-v2.0"
 ## Dataset paths
 EMPATHETIC_DIALOGUES_PATH = os.path.join(RESOURCE_DIR, "empatheticdialogues/train.csv")
 DAILY_DIALOG_PATH = os.path.join(RESOURCE_DIR, "dailydialog/dialogues_text.txt")
+MENTAL_HEALTH_CONVO_PATH = os.path.join(RESOURCE_DIR, "intents.json")
+COUNSEL_CHAT_PATH = os.path.join(RESOURCE_DIR, "counselchat-data.csv")
+
+SAVED_VECTOR_STORE = os.path.join(RESOURCE_DIR, "mental_health.index")
 
 DEFAULT_CHAT_PROMPT = None
 
 with open(PROMPT_PATH, "r") as f:
     DEFAULT_CHAT_PROMPT = f.read()
 
-TOP_K = 2
-CHAR_TRUNCATION = 150_000
+TOP_K = 1
+CHAR_TRUNCATION = 5000
+MAX_INPUT_TOKENS = 1024
