@@ -9,7 +9,7 @@ from transformers import (
 )
 import torch
 
-from .constants import (
+from constants import (
     DEFAULT_BASE_CHAT_MODEL,
     DEFAULT_CHAT_MODEL,
     EMPATHETIC_DIALOGUES_PATH,
