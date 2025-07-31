@@ -13,14 +13,29 @@ from constants import (
     DEFAULT_BASE_CHAT_MODEL,
     DEFAULT_CHAT_MODEL,
     EMPATHETIC_DIALOGUES_PATH,
-    DAILY_DIALOG_PATH,
+    DIALOGPT_JSON_PATH,
     Names,
 )
-
-# Load the tokenizer and model
+import pandas as pd
+import json
+from datasets import Dataset
+from transformers import (
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    Trainer,
+    TrainingArguments,
+    DataCollatorForLanguageModeling,
+)
+import torch
+# -------------------
+# Tokenizer + Model
+# -------------------
 tokenizer = AutoTokenizer.from_pretrained(DEFAULT_BASE_CHAT_MODEL)
 
-# Set pad_token if missing
+# add __eou__ token if not present
+special_tokens = {"additional_special_tokens": [Names.EOU]}
+tokenizer.add_special_tokens(special_tokens)
+
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
@@ -35,55 +50,62 @@ def load_empathetic(path: str = EMPATHETIC_DIALOGUES_PATH):
     return Dataset.from_pandas(df[[Names.TEXT]])
 
 
-# 2. Load DailyDialog
-def load_dailydialog(path: str = DAILY_DIALOG_PATH):
-    with open(path, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-    conversations = [line.strip().replace("__eou__", "") for line in lines]
-    df = pd.DataFrame(conversations, columns=[Names.TEXT])
-    return Dataset.from_pandas(df)
+# -------------------
+# Preprocessing
+# -------------------
+def filter_too_long(example):
+    tokens = tokenizer(example[Names.TEXT], add_special_tokens=False)["input_ids"]
+    return len(tokens) <= tokenizer.model_max_length
 
+def tokenize_function(example):
+    return tokenizer(
+        example[Names.TEXT],
+        truncation=True,
+        max_length=tokenizer.model_max_length,
+    )
 
-# 3. Preprocessing
-def tokenize_function(example: pd.DataFrame) -> AutoTokenizer:
-    return tokenizer(example[Names.TEXT], truncation=True, max_length=512)
-
-
+# -------------------
+# Main Training
+# -------------------
 def main():
-    # Load datasets
-    empathic_ds = load_empathetic()
-    daily_ds = load_dailydialog()
+    # Load dataset
+    ds = load_empathetic()#load_jsonl_dialogs(DIALOGPT_JSON_PATH)
+    print("👉 Loaded dataset size:", len(ds))
+    print("👉 Example:", ds["text"][0][:200], "...")
 
-    # Combine and shuffle
-    combined_ds = concatenate_datasets([empathic_ds, daily_ds]).shuffle(seed=42)
+    # Shuffle + filter long dialogs
+    ds = ds.shuffle(seed=42)
+    ds = ds.filter(filter_too_long)
+    print("👉 Filtered dataset size:", len(ds))
 
     # Tokenize
-    tokenized = combined_ds.map(
+    tokenized = ds.map(
         tokenize_function, batched=True, remove_columns=[Names.TEXT]
     )
 
-    # Define training args
+    # Training args
     training_args = TrainingArguments(
         output_dir=DEFAULT_CHAT_MODEL,
         overwrite_output_dir=True,
         per_device_train_batch_size=4,
         num_train_epochs=3,
         save_steps=1000,
-        save_total_limit=2,
+        save_total_limit=1,
         logging_steps=100,
         fp16=torch.cuda.is_available(),
-        learning_rate=0.00005,
-        weight_decay=0,
+        learning_rate=5e-5,
+        weight_decay=0.0,
         adam_beta1=0.9,
         adam_beta2=0.999,
         adam_epsilon=1e-8,
-        max_grad_norm=1,
+        max_grad_norm=1.0,
+        report_to="none",  # disable wandb etc. unless configured
     )
 
-    # Data collator for language modeling
+    # Collator for causal LM
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
-    # Initialize Trainer
+    # Trainer
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -92,12 +114,13 @@ def main():
         data_collator=data_collator,
     )
 
-    # Fine-tune!
+    # Train
     trainer.train()
 
-    # Save model
+    # Save model + tokenizer
     model.save_pretrained(DEFAULT_CHAT_MODEL)
     tokenizer.save_pretrained(DEFAULT_CHAT_MODEL)
+    print(f"✅ Model saved to {DEFAULT_CHAT_MODEL}")
 
 
 if __name__ == "__main__":

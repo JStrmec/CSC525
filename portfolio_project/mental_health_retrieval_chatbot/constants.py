@@ -3,6 +3,7 @@ import os
 
 class Names:
     TEXT = "text"
+    EOU = "__eou__"
 
 
 # Constants
@@ -29,6 +30,7 @@ DEFAULT_SVS_MODEL = "Snowflake/snowflake-arctic-embed-l-v2.0"
 ## Dataset paths
 EMPATHETIC_DIALOGUES_PATH = os.path.join(RESOURCE_DIR, "empatheticdialogues/train.csv")
 DAILY_DIALOG_PATH = os.path.join(RESOURCE_DIR, "dailydialog/dialogues_text.txt")
+DIALOGPT_JSON_PATH = os.path.join(RESOURCE_DIR, "dialoGPT_ready.jsonl")
 MENTAL_HEALTH_CONVO_PATH = os.path.join(RESOURCE_DIR, "intents.json")
 COUNSEL_CHAT_PATH = os.path.join(RESOURCE_DIR, "counselchat-data.csv")
 

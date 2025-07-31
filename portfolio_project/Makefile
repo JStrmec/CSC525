@@ -37,4 +37,4 @@ run: setup-dev-env
 	PYTHONPATH=$(SRC) $(PYTHON) mental_health_retrieval_chatbot/ui.py
 	
 run-tuning: setup-dev-env
-	PYTHONPATH=$(SRC) $(PYTHON) mental_health_retrieval_chatbot/model_tuning.py
+	PYTHONPATH=$(SRC) $(PYTHON) mental_health_retrieval_chatbot/chatbot_model_tuning.py
