@@ -23,7 +23,9 @@ PROMPT_PATH = os.path.join(PROMPT_DIR, "chat_prompt.md")
 
 ## Model paths
 DEFAULT_BASE_CHAT_MODEL = "microsoft/DialoGPT-small"
-DEFAULT_CHAT_MODEL = os.path.join(".", RESOURCE_DIR, "empathetic-finetuned-chatbot")
+base_model = "llama_3v2_3b_instruct"  #  "empathetic-finetuned-chatbot"
+DEFAULT_CHAT_MODEL = os.path.join(".", RESOURCE_DIR, base_model)
+
 DEFAULT_SVS_MODEL = "Snowflake/snowflake-arctic-embed-l-v2.0"
 
 

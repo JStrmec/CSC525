@@ -9,6 +9,7 @@ from .constants import DEFAULT_SVS_MODEL, CHAR_TRUNCATION
 
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
+
 class Vector:
     vector: list[float]
 

@@ -38,10 +38,7 @@ class TestChatBot(unittest.TestCase):
             user_input=user_input, chat_history=chat_history, context=context
         )
         expected_prompt = (
-            f"USER: {user_input}\n"
-            f"{chat_history}\n"
-            f"CONTEXT: {context}\n"
-            "BOT:"
+            f"USER: {user_input}\n{chat_history}\nCONTEXT: {context}\nBOT:"
         )
         self.assertEqual(formatted_prompt, expected_prompt.strip())
 

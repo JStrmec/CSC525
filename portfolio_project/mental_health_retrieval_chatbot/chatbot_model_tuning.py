@@ -1,23 +1,4 @@
 import pandas as pd
-from datasets import Dataset, concatenate_datasets
-from transformers import (
-    AutoTokenizer,
-    AutoModelForCausalLM,
-    Trainer,
-    TrainingArguments,
-    DataCollatorForLanguageModeling,
-)
-import torch
-
-from constants import (
-    DEFAULT_BASE_CHAT_MODEL,
-    DEFAULT_CHAT_MODEL,
-    EMPATHETIC_DIALOGUES_PATH,
-    DIALOGPT_JSON_PATH,
-    Names,
-)
-import pandas as pd
-import json
 from datasets import Dataset
 from transformers import (
     AutoTokenizer,
@@ -27,6 +8,14 @@ from transformers import (
     DataCollatorForLanguageModeling,
 )
 import torch
+
+from .constants import (
+    DEFAULT_BASE_CHAT_MODEL,
+    DEFAULT_CHAT_MODEL,
+    EMPATHETIC_DIALOGUES_PATH,
+    Names,
+)
+
 # -------------------
 # Tokenizer + Model
 # -------------------
@@ -57,6 +46,7 @@ def filter_too_long(example):
     tokens = tokenizer(example[Names.TEXT], add_special_tokens=False)["input_ids"]
     return len(tokens) <= tokenizer.model_max_length
 
+
 def tokenize_function(example):
     return tokenizer(
         example[Names.TEXT],
@@ -64,12 +54,13 @@ def tokenize_function(example):
         max_length=tokenizer.model_max_length,
     )
 
+
 # -------------------
 # Main Training
 # -------------------
 def main():
     # Load dataset
-    ds = load_empathetic()#load_jsonl_dialogs(DIALOGPT_JSON_PATH)
+    ds = load_empathetic()  # load_jsonl_dialogs(DIALOGPT_JSON_PATH)
     print("👉 Loaded dataset size:", len(ds))
     print("👉 Example:", ds["text"][0][:200], "...")
 
@@ -79,9 +70,7 @@ def main():
     print("👉 Filtered dataset size:", len(ds))
 
     # Tokenize
-    tokenized = ds.map(
-        tokenize_function, batched=True, remove_columns=[Names.TEXT]
-    )
+    tokenized = ds.map(tokenize_function, batched=True, remove_columns=[Names.TEXT])
 
     # Training args
     training_args = TrainingArguments(
