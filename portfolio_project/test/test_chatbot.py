@@ -28,6 +28,23 @@ class TestChatBot(unittest.TestCase):
             cls.store.load_index()
         cls.responder = ChatbotResponder(cls.store)
 
+    def test_prompt_formatting(self):
+        responder = self.responder
+        user_input = "How can I manage stress better?"
+        chat_history = "USER: I've been feeling stressed lately.\nBOT: It's important to take breaks."
+        context = "Stress management techniques include mindfulness, exercise, and talking to someone."
+
+        formatted_prompt = responder.format_prompt(
+            user_input=user_input, chat_history=chat_history, context=context
+        )
+        expected_prompt = (
+            f"USER: {user_input}\n"
+            f"{chat_history}\n"
+            f"CONTEXT: {context}\n"
+            "BOT:"
+        )
+        self.assertEqual(formatted_prompt, expected_prompt.strip())
+
     def test_chat_bot(self):
         responder = self.responder
         user_input = "I'm feeling overwhelmed and anxious lately."

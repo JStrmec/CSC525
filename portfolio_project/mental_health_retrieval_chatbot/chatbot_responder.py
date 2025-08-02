@@ -13,11 +13,9 @@ class ChatbotResponder:
 
     def generate_response(self, user_input: str, chat_history: str = "") -> str:
         context = "\n".join(self.vector_store.search(user_input, top_k=TOP_K))
-        chat_history = ""
-        context = ""
-        prompt = DEFAULT_CHAT_PROMPT.format(
+        prompt = self.format_prompt(
             user_input=user_input, chat_history=chat_history, context=context
-        ).strip()
+        )
         input_ids = self.tokenizer.encode(
             prompt, return_tensors="pt", truncation=True, max_length=MAX_INPUT_TOKENS
         )
@@ -29,14 +27,20 @@ class ChatbotResponder:
             max_new_tokens=150,
             eos_token_id=self.tokenizer.eos_token_id,
             do_sample=True,
-            top_k=50,
-            top_p=0.95,
+            top_k=5,
+            top_p=0.1,
         )
         return (
             self.tokenizer.decode(output_ids[0], skip_special_tokens=True)
             .split("BOT:")[-1]
             .strip()
         )
+    
+    @staticmethod
+    def format_prompt(user_input: str, chat_history: str = "", context: str = "") -> str:
+        return DEFAULT_CHAT_PROMPT.format(
+            user_input=user_input, chat_history=chat_history, context=context
+        ).strip()
 
 class LlamaChatbotResponder(ChatbotResponder):
     def __init__(self, vector_store: MentalHealthVectorStore):
