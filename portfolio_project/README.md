@@ -1,4 +1,4 @@
-# CSC525 Portfolio Project Retrival Chatbot
+# CSC525 Portfolio Project Retrieval Chatbot
 
 To download the model wieghts from the public bucket:
 ```
