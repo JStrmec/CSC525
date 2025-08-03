@@ -89,9 +89,6 @@ class MentalHealthVectorStore:
                 counsel_texts.append(combined)
 
         self.texts = conv_texts + counsel_texts
-        # write to file
-        with open("searchable.txt", "w", encoding="utf-8") as f:
-            json.dump(self.texts, f)
         return self.texts
 
     def build_index(self):

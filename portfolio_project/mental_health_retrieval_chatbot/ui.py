@@ -1,15 +1,21 @@
 import gradio as gr
-from mental_health_retrieval_chatbot.chatbot_responder import ChatbotResponder
+from mental_health_retrieval_chatbot.chatbot_responder import (
+    ChatbotResponder,
+    FineTuned,
+)
 from mental_health_retrieval_chatbot.semantic_encoder import SemanticEncoder
 from mental_health_retrieval_chatbot.retrieval import MentalHealthVectorStore
 from mental_health_retrieval_chatbot.chat_history import ChatHistory
+from mental_health_retrieval_chatbot.constants import USE_FINE_TUNED
 
 # Initialize once
 encoder = SemanticEncoder()
 store = MentalHealthVectorStore(encoder)
 store.load_index()
-
-responder = ChatbotResponder(store)
+if USE_FINE_TUNED:
+    responder = FineTuned(store)
+else:
+    responder = ChatbotResponder(store)
 history = ChatHistory(max_turns=1, include_bot=True)
 
 

@@ -30,4 +30,4 @@ class PromptBuilder:
         if context:
             prompt_parts.append("CONTEXT:" + context.strip())
 
-        return "\n".join(prompt_parts).strip() + "\nBOT:"
+        return "\n".join(prompt_parts).strip() + "\nRESPONSE:"

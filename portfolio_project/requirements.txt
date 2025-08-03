@@ -1,14 +1,14 @@
 torch
-gradio
+gradio>= 4.40.0
 pandas
 datasets
 kagglehub
 faiss-gpu
 langdetect
-googletrans
 numpy==1.26.4
 scipy==1.14.1
 typing==3.7.4.3
 pydantic==2.10.6
 accelerate==0.27.2
 transformers==4.48.3
+googletrans
