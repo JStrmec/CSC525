@@ -23,7 +23,7 @@ PROMPT_PATH = os.path.join(PROMPT_DIR, "chat_prompt.md")
 
 ## Model paths
 DEFAULT_BASE_CHAT_MODEL = "microsoft/DialoGPT-small"
-base_model = "llama_3v2_3b_instruct"  #  "empathetic-finetuned-chatbot"
+base_model = "empathetic-finetuned-chatbot"
 DEFAULT_CHAT_MODEL = os.path.join(".", RESOURCE_DIR, base_model)
 
 DEFAULT_SVS_MODEL = "Snowflake/snowflake-arctic-embed-l-v2.0"
@@ -38,11 +38,13 @@ COUNSEL_CHAT_PATH = os.path.join(RESOURCE_DIR, "counselchat-data.csv")
 
 SAVED_VECTOR_STORE = os.path.join(RESOURCE_DIR, "mental_health.index")
 
-DEFAULT_CHAT_PROMPT = None
+BASE_INSTRUCTIONS = None
 
 with open(PROMPT_PATH, "r") as f:
-    DEFAULT_CHAT_PROMPT = f.read()
+    BASE_INSTRUCTIONS = f.read()
 
 TOP_K = 1
 CHAR_TRUNCATION = 5000
 MAX_INPUT_TOKENS = 1024
+
+CLEANING_MAP = {"\n": " ", "_comma_": ",", "_period_": ".", "&nbsp;": " ", " BOT:": ""}

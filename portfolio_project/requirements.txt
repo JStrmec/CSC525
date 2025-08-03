@@ -4,13 +4,11 @@ pandas
 datasets
 kagglehub
 faiss-gpu
-vllm==0.7.2
-loguru==0.7.2
+langdetect
+googletrans
 numpy==1.26.4
 scipy==1.14.1
 typing==3.7.4.3
-fastapi==0.112.2
 pydantic==2.10.6
 accelerate==0.27.2
-ray[serve]==2.42.1
 transformers==4.48.3

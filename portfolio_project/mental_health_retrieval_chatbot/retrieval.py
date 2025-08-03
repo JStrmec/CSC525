@@ -4,6 +4,10 @@ import numpy as np
 import json
 from .semantic_encoder import SemanticEncoder
 from .constants import TOP_K, SAVED_VECTOR_STORE
+import re
+import html
+from langdetect import detect
+from googletrans import Translator
 
 
 class MentalHealthVectorStore:
@@ -12,6 +16,38 @@ class MentalHealthVectorStore:
         self.index_path = index_path
         self.index = None
         self.texts = []
+        self.translator = Translator()
+
+    @staticmethod
+    def clean_html(raw_html: str) -> str:
+        cleaned = re.sub(
+            r"<(script|style).*?>.*?</\1>",
+            "",
+            raw_html,
+            flags=re.DOTALL | re.IGNORECASE,
+        )
+        cleaned = re.sub(r"<(br|BR)\s*/?>", "\n", cleaned)
+        cleaned = re.sub(r"</?(p|P|div|DIV|li|LI)[^>]*>", "\n", cleaned)
+        cleaned = re.sub(r"<[^>]+>", " ", cleaned)
+        cleaned = html.unescape(cleaned)
+        cleaned = re.sub(r"\n+", "\n", cleaned)
+        cleaned = re.sub(r"[ \t]+", " ", cleaned)
+        cleaned = cleaned.strip()
+        return cleaned
+
+    @staticmethod
+    def is_spanish(text: str) -> bool:
+        try:
+            return detect(text) == "es"
+        except Exception:
+            return False
+
+    def translate_if_spanish(self, text: str) -> str:
+        if self.is_spanish(text):
+            translated = self.translator.translate(text, src="es", dest="en")
+            return translated.text
+        else:
+            return text
 
     def load_datasets(self, mh_conv_path: str, counsel_path: str) -> list[str]:
         # Load Mental Health Conversational Data (JSON)
@@ -27,7 +63,7 @@ class MentalHealthVectorStore:
             responses = entry.get("responses", [])
             for pattern in patterns:
                 for response in responses:
-                    combined = f"USER: {pattern.strip()}\nBOT: {response.strip()}"
+                    combined = f"Q: {pattern.strip()}\nA: {response.strip()}"
                     conv_texts.append(combined)
 
         # Load CounselChat CSV
@@ -36,13 +72,26 @@ class MentalHealthVectorStore:
 
         counsel_texts = []
         for _, row in counsel_df.iterrows():
-            question = str(row["questionText"]).strip()
-            answer = str(row["answerText"]).strip()
-            if answer:
-                combined = f"Q: {question}\nA: {answer}"
+            question = self.translate_if_spanish(
+                self.clean_html(raw_html=str(row["questionText"]).strip())
+            )
+            answer = self.translate_if_spanish(
+                self.clean_html(raw_html=str(row["answerText"]).strip())
+            )
+
+            # Split into advice sentences / chunks
+            advice_sentences = [
+                s.strip() for s in answer.split(".") if len(s.strip()) > 20
+            ]
+
+            for advice in advice_sentences:
+                combined = f"Q: {question}\nA: {advice}"
                 counsel_texts.append(combined)
 
         self.texts = conv_texts + counsel_texts
+        # write to file
+        with open("searchable.txt", "w", encoding="utf-8") as f:
+            json.dump(self.texts, f)
         return self.texts
 
     def build_index(self):

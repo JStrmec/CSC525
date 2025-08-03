@@ -1,85 +1,124 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
-import transformers
+from transformers import GPT2Tokenizer, GPT2LMHeadModel
+from .constants import (
+    TOP_K,
+    MAX_INPUT_TOKENS,
+    CLEANING_MAP,
+    DEFAULT_CHAT_MODEL,
+)
 import torch
-from .constants import DEFAULT_CHAT_MODEL, DEFAULT_CHAT_PROMPT, TOP_K, MAX_INPUT_TOKENS
 from .retrieval import MentalHealthVectorStore
+from .prompt_builder import PromptBuilder
+from .chat_history import ChatHistory
+from typing import Any
 
 
 class ChatbotResponder:
     def __init__(self, vector_store: MentalHealthVectorStore):
+        torch.manual_seed(42)
         self.vector_store = vector_store
-        self.tokenizer = AutoTokenizer.from_pretrained(DEFAULT_CHAT_MODEL)
-        self.model = AutoModelForCausalLM.from_pretrained(DEFAULT_CHAT_MODEL)
+        self.prompt_builder = PromptBuilder()
+        self.tokenizer = GPT2Tokenizer.from_pretrained("gpt2-xl")
+        self.model = GPT2LMHeadModel.from_pretrained("gpt2-xl")
 
-    def generate_response(self, user_input: str, chat_history: str = "") -> str:
+    def generate_response(self, user_input: str, history: ChatHistory) -> str:
         context = "\n".join(self.vector_store.search(user_input, top_k=TOP_K))
-        prompt = self.format_prompt(
-            user_input=user_input, chat_history=chat_history, context=context
+        print("Context retrieved:", context)
+        prompt = self.prompt_builder.build(
+            user_input=user_input, chat_history=history, context=context
         )
+
         input_ids = self.tokenizer.encode(
             prompt, return_tensors="pt", truncation=True, max_length=MAX_INPUT_TOKENS
         )
-        # Truncate input_ids to the last 1024 tokens if longer to prevent crash
-        if input_ids.shape[-1] > 1024:
-            input_ids = input_ids[:, -1024:]
+
+        # Generate tokens
         output_ids = self.model.generate(
             input_ids,
             max_new_tokens=150,
+            min_length=20,
             eos_token_id=self.tokenizer.eos_token_id,
+            no_repeat_ngram_size=2,
             do_sample=True,
-            top_k=5,
-            top_p=0.1,
-        )
-        return (
-            self.tokenizer.decode(output_ids[0], skip_special_tokens=True)
-            .split("BOT:")[-1]
-            .strip()
+            repetition_penalty=1.2,
+            temperature=0.7,
+            top_k=50,
+            top_p=0.85,
         )
 
-    @staticmethod
-    def format_prompt(
-        user_input: str, chat_history: str = "", context: str = ""
+        return self.format_response(
+            output_ids=output_ids, input_ids=input_ids, context=context
+        )
+
+    def format_response(
+        self, output_ids: torch.Tensor, input_ids: torch.Tensor, context: str
     ) -> str:
-        return DEFAULT_CHAT_PROMPT.format(
-            user_input=user_input, chat_history=chat_history, context=context
-        ).strip()
+        # Slice off the prompt to get only the generated text
+        gen_tokens = output_ids[:, input_ids.shape[-1] :]
+        raw_response = self.tokenizer.decode(gen_tokens[0], skip_special_tokens=True)
+
+        if not raw_response:
+            if "A:" in context:
+                raw_response = context.split("A:")[-1].strip()
+            else:
+                raw_response = context.strip()
+
+        for key, value in CLEANING_MAP.items():
+            raw_response = raw_response.replace(key, value)
+
+        clean_bot_response = raw_response.strip()
+        print("Cleaned response:", clean_bot_response)
+        return clean_bot_response
 
 
-class LlamaChatbotResponder(ChatbotResponder):
+class FineTuned(ChatbotResponder):
     def __init__(self, vector_store: MentalHealthVectorStore):
         super().__init__(vector_store)
-        self.model_id = "akjindal53244/Llama-3.1-Storm-8B"
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
-        self.model = AutoModelForCausalLM.from_pretrained(self.model_id)
-        self.pipeline = transformers.pipeline(
-            "text-generation",
-            model=self.model_id,
-            model_kwargs={"torch_dtype": torch.bfloat16},
-            device_map="auto",
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained(DEFAULT_CHAT_MODEL)
+        self.model = AutoModelForCausalLM.from_pretrained(DEFAULT_CHAT_MODEL)
 
-    def generate_response(self, user_input: str, chat_history: str = "") -> str:
+    def generate_response(self, user_input: str, history: ChatHistory) -> str:
         context = "\n".join(self.vector_store.search(user_input, top_k=TOP_K))
-        chat_history = ""
-        context = ""
-        prompt = DEFAULT_CHAT_PROMPT.format(
-            user_input=user_input, chat_history=chat_history, context=context
-        ).strip()
-
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a mental health specialist chatbot meant to answer questions about mental health and wellness using context and user conversation history to answer respectfully, and considerately.",
-            },
-            {"role": "user", "content": prompt},
-        ]
-
-        outputs = self.pipeline(
-            messages,
-            max_new_tokens=150,
-            do_sample=True,
-            temperature=0.01,
-            top_k=100,
-            top_p=0.95,
+        print("Context retrieved:", context)
+        prompt = self.prompt_builder.build(
+            user_input=user_input, chat_history=history, context=context
         )
-        return outputs[0]["generated_text"].strip()
+
+        input_ids = self.tokenizer.encode(
+            prompt, return_tensors="pt", truncation=True, max_length=MAX_INPUT_TOKENS
+        )
+        if input_ids.shape[-1] > 1024:
+            input_ids = input_ids[:, -1024:]
+
+        output_ids = self.model.generate(
+            input_ids,
+            max_new_tokens=150,
+            min_length=20,
+            eos_token_id=self.tokenizer.eos_token_id,
+            no_repeat_ngram_size=2,
+            do_sample=True,
+            repetition_penalty=1.2,
+            temperature=0.3,
+            top_k=50,
+            top_p=0.75,
+        )
+        return self.format_response(
+            output_ids=output_ids, input_ids=input_ids, context=context
+        )
+
+    def format_response(
+        self, output: Any, input_ids: torch.Tensor, context: str
+    ) -> str:
+        gen_tokens = output[:, input_ids.shape[-1] :]
+        raw_response = self.tokenizer.decode(gen_tokens[0], skip_special_tokens=True)
+        if not raw_response:
+            if "A:" in context:
+                raw_response = context.split("A:")[-1].strip()
+            else:
+                raw_response = context.strip()
+        # Clean up the response
+        for key, value in CLEANING_MAP.items():
+            raw_response = raw_response.replace(key, value)
+        clean_bot_response = raw_response.strip()
+        print("Cleaned response:", clean_bot_response)
+        return clean_bot_response
